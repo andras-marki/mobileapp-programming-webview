@@ -4,18 +4,47 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
 
-    public void showExternalWebPage(){
+    private ArrayList<Cat> cats = new ArrayList<Cat>();
+
+    private ArrayList<RecyclerViewItem> items;
+
+    private int showExternalPagePressed = 0;
+    private int showInternalPagePressed = 0;
+
+    // compared to the example code, we need to move the adapter out
+    // as we are using two extra classes to do some updates
+    RecyclerViewAdapter adapter;
+
+    public void showExternalWebPage() {
         // TODO: Add your code for showing external web page here
+        showExternalPagePressed++;
+        Log.d("==>", "EXTERNAL_PRESSED" + showExternalPagePressed);
+        items.add(new RecyclerViewItem("External page pressed " + showExternalPagePressed + " times"));
+        adapter.notifyItemInserted(items.size()-1);
     }
 
-    public void showInternalWebPage(){
+    public void showInternalWebPage() {
         // TODO: Add your code for showing internal web page here
+        showInternalPagePressed++;
+        Log.d("==>", "INTERNAL_PRESSED" + showInternalPagePressed);
+        items.add(new RecyclerViewItem("Internal page pressed " + showInternalPagePressed + " times"));
+        adapter.notifyItemInserted(items.size()-1);
+
+        // note: the following adapter notify refreshes the whole list, but it is a bit slower
+        // you can still use it if you are making complex changes
+        //adapter.notifyDataSetChanged();
     }
 
     @Override
@@ -24,6 +53,42 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        cats.add(new Cat("Fritz"));
+        cats.add(new Cat("Frida"));
+
+        // note: we are having items here locally
+        // but cats is existing on the class scope
+        // in case you need multiple functions accessing or manipulating a single container
+        // then you need to put the variable in the class scope
+
+        items = new ArrayList<>(Arrays.asList(new RecyclerViewItem("Matterhorn"), new RecyclerViewItem("Mont Blanc"), new RecyclerViewItem("Denali")));
+
+        // the RecycleViewItem takes string as an input
+        // as long as we only use string it will work.
+        for (Cat cat : cats)
+            items.add(new RecyclerViewItem(cat.getInfo()));
+
+        for (int i = 0; i < 20; i++) {
+            // note: we do a string conversion here putting together an int with a string
+            //
+            items.add(new RecyclerViewItem("number_" + i));
+        }
+
+        // note: compared to the example we must remove RecyclerViewAdapter
+        // as that would create a new variable by declaring it
+        // the original example shows the adapter on class scope
+        // but that way, we cannot update the adapter and with it, the user interface
+        /*RecyclerViewAdapter*/ adapter = new RecyclerViewAdapter(this, items, new RecyclerViewAdapter.OnClickListener() {
+            //@Override
+            public void onClick(RecyclerViewItem item) {
+                Toast.makeText(MainActivity.this, item.getTitle(), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        RecyclerView view = findViewById(R.id.recycler_view);
+        view.setLayoutManager(new LinearLayoutManager(this));
+        view.setAdapter(adapter);
 
         /*
         * Rename your App. Tip: Values->Strings
@@ -67,12 +132,14 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_external_web) {
-            Log.d("==>","Will display external web page");
+            Log.d("==>", "Will display external web page");
+            showExternalWebPage();
             return true;
         }
 
         if (id == R.id.action_internal_web) {
-            Log.d("==>","Will display internal web page");
+            Log.d("==>", "Will display internal web page");
+            showInternalWebPage();
             return true;
         }
 
